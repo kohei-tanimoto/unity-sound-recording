@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,6 +10,7 @@ public class ButtonScript : MonoBehaviour
     const int samplingFrequency = 44100; // サンプリングレート
     const int maxTime_s = 3599; // 最大録音時間[s] ※60分未満
     string micName = "null"; // マイクデバイスの名前
+    bool recordedFlg = false; // 録音済みかどうかのフラグ
 
     void Start()
     {
@@ -22,6 +24,28 @@ public class ButtonScript : MonoBehaviour
         audioSource = GameObject.FindGameObjectWithTag("RecordingAudioSource").GetComponent<AudioSource>();
     }
 
+    void Update()
+    {
+        // AudioClip存在 and 録音未完 and マイク録音中じゃない → 自動終了している
+        if (audioSource.clip != null)
+        {
+            if (!recordedFlg && !Microphone.IsRecording(deviceName: micName))
+            {
+                Debug.Log("録音自動終了！");
+                recordedFlg = true;
+
+                // Wavファイルへ保存
+                // ※こちらにアラート表示の処理を入れて頂くのもよし
+                DateTime dt = DateTime.Now;
+                string dtStr = dt.ToString("yyyyMMddHHmmss");
+                if (!SaveAudioSourceWav.Save("audiofile_" + dtStr + ".wav", audioSource.clip))
+                {
+                    Debug.Log("録音ファイルを保存することができませんでした");
+                }
+            }
+        }
+    }
+
     /// <summary>
     /// 録音を開始する
     /// </summary>
@@ -33,6 +57,10 @@ public class ButtonScript : MonoBehaviour
             Debug.Log("マイクが見つかりません");
             return;
         }
+
+        // AudioClipを初期化
+        audioSource.clip = null;
+        recordedFlg = false;
 
         // 録音開始
         Debug.Log("録音を開始します");
@@ -55,8 +83,9 @@ public class ButtonScript : MonoBehaviour
         // マイクの録音位置を取得
         int position = Microphone.GetPosition(micName);
 
-        // 録音を停止
+        // 録音を停止し録音済みフラグを立てる
         Microphone.End(deviceName: micName);
+        recordedFlg = true;
 
         // 音声データ一時退避用の領域を確保し、audioClipからのデータを格納
         float[] soundData = new float[audioSource.clip.samples * audioSource.clip.channels];
@@ -78,7 +107,9 @@ public class ButtonScript : MonoBehaviour
         audioSource.clip = newClip;
 
         // Wavファイルへ保存
-        if (!SaveAudioSourceWav.Save("audiofile.wav", audioSource.clip))
+        DateTime dt = DateTime.Now;
+        string dtStr = dt.ToString("yyyyMMddHHmmss");
+        if (!SaveAudioSourceWav.Save("audiofile_" + dtStr + ".wav", audioSource.clip))
         {
             Debug.Log("録音ファイルを保存することができませんでした");
         }
