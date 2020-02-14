@@ -9,24 +9,22 @@ public static class SaveAudioSourceWav {
     /// <summary>
     /// AudioClipをWavファイルへ保存する
     /// </summary>
-    /// <param name="filename">保存ファイル名</param>
+    /// <param name="fileFullPath">保存ファイルフルパス</param>
     /// <param name="clip">保存するAudioClip</param>
     /// <returns>true: 保存成功 | false: 保存失敗</returns>
-    public static bool Save(string filename, AudioClip clip)
+    public static bool Save(string fileFullPath, AudioClip clip)
     {
-        if (!filename.ToLower().EndsWith(".wav"))
+        if (!fileFullPath.ToLower().EndsWith(".wav"))
         {
-            filename += ".wav";
+            fileFullPath += ".wav";
         }
 
-        var filepath = Path.Combine(Application.persistentDataPath, filename);
-
-        Debug.Log("保存ファイルフルパス: " + filepath);
+        Debug.Log("保存ファイルフルパス: " + fileFullPath);
 
         // 保存先ディレクトリがない場合作成する
-        Directory.CreateDirectory(Path.GetDirectoryName(filepath));
+        Directory.CreateDirectory(Path.GetDirectoryName(fileFullPath));
 
-        using (var fileStream = CreateEmpty(filepath))
+        using (var fileStream = CreateEmpty(fileFullPath))
         {
             ConvertAndWrite(fileStream, clip);
             WriteHeader(fileStream, clip);
